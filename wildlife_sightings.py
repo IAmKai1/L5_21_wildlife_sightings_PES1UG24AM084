@@ -1,4 +1,4 @@
-"""Sightings log for a wildlife sanctuary: records species per zone and summarises them."""
+"""Sightings log for a wildlife sanctuary, summarised by zone and species."""
 import hashlib
 import sqlite3
 
@@ -14,7 +14,7 @@ def create_connection():
 
 
 def log_sighting(conn, species, zone, count, extras=None):
-    """Record a sighting and add its count to the running per-species totals."""
+    """Record a sighting and add its count to the per-species totals."""
     if extras is None:
         extras = {}
     conn.execute(
@@ -27,12 +27,15 @@ def log_sighting(conn, species, zone, count, extras=None):
 
 def observer_id(observer):
     """Return a short, non-secret ID derived from the observer's name."""
-    return hashlib.md5(observer.encode(), usedforsecurity=False).hexdigest()[:6]
+    digest = hashlib.md5(observer.encode(), usedforsecurity=False)
+    return digest.hexdigest()[:6]
 
 
 def zone_summary(conn, zone):
     """Return the total number of animals sighted in a zone (0 if none)."""
-    row = conn.execute("SELECT SUM(count) FROM sightings WHERE zone = ?", (zone,)).fetchone()
+    row = conn.execute(
+        "SELECT SUM(count) FROM sightings WHERE zone = ?", (zone,)
+    ).fetchone()
     if row[0] is None:
         return 0
     return row[0]
@@ -40,9 +43,11 @@ def zone_summary(conn, zone):
 
 def rarest(conn):
     """Return the species with the lowest total count."""
-    rows = conn.execute("SELECT species, SUM(count) FROM sightings GROUP BY species").fetchall()
-    l=min(rows, key=lambda r: r[1])
-    return l[0]
+    rows = conn.execute(
+        "SELECT species, SUM(count) FROM sightings GROUP BY species"
+    ).fetchall()
+    lowest = min(rows, key=lambda r: r[1])
+    return lowest[0]
 
 
 def main():
