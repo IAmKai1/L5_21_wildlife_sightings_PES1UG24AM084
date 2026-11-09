@@ -6,13 +6,13 @@ conn.execute("CREATE TABLE sightings (id INTEGER PRIMARY KEY, species TEXT, zone
 
 
 def logSighting(conn, species, zone, count, extras={}):
-    conn.execute("INSERT INTO sightings (species, zone, count) VALUES ('{}', '{}', {})".format(species, zone, count))
+    conn.execute("INSERT INTO sightings (species, zone, count) VALUES (?, ?, ?)", (species, zone, count))
     extras[species] = extras.get(species, 0) + count
     return extras
 
 
 def observerId(observer):
-    return hashlib.md5(observer.encode()).hexdigest()[:6]
+    return hashlib.md5(observer.encode(), usedforsecurity=False).hexdigest()[:6]
 
 
 def zoneSummary(conn, zone):
@@ -33,7 +33,8 @@ def main():
     totals = logSighting(conn, "Leopard", "North", 1)
     logSighting(conn, "Chital", "North", 24, totals)
     logSighting(conn, "Hornbill", "East", 3, totals)
-    assert len(totals) == 3
+    if len(totals) != 3:
+        raise RuntimeError("Expected totals for 3 species")
     print(observerId("Arun"), zoneSummary(conn, "North"), rarest(conn))
 
 
